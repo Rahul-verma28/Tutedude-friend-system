@@ -1,15 +1,31 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import Cookies from "js-cookie";
+import { GET_USER_INFO } from "./constants";
+import { apiClient } from "./api-client";
 
-interface PrivateRouteProps {
-  children: React.ReactElement;
-}
+const PrivateRoute: React.FC<{ children: React.ReactElement }> = ({
+  children,
+}) => {
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
 
-const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
-  const token = Cookies.get("jwt"); // Check for token in cookies
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        await apiClient.get(GET_USER_INFO, {
+          withCredentials: true,
+        });
+        setAuthenticated(true);
+      } catch (error) {
+        setAuthenticated(false);
+      }
+    };
 
-  return token ? children : <Navigate to="/login" />;
+    checkAuth();
+  }, []);
+
+  if (authenticated === null) return <div>Loading...</div>; // Show loader
+
+  return authenticated ? children : <Navigate to="/login" />;
 };
 
 export default PrivateRoute;
